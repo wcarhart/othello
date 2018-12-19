@@ -1,4 +1,3 @@
-import os
 import sys
 import argparse
 
@@ -62,6 +61,9 @@ def color(color, text):
 		return text
 
 def game_loop():
+
+	print("{} vs. {}".format(color(player_one_color, player_one_name), color(player_two_color, player_two_name)))
+
 	turn = 1
 	game_over = False
 	while not game_over:
@@ -480,7 +482,8 @@ def is_valid_move(index, player):
 def build_parser():
 	parser = argparse.ArgumentParser(description=__doc__, formatter_class = argparse.ArgumentDefaultsHelpFormatter)
 	parser.add_argument('--setup', action='store_true', default=False, required=False, help="Set up player configuration before starting the game")
-	parser.add_argument('--list-commands', action='store_true', default=False, required=True, help="Show the available commands you can type during the game")
+	parser.add_argument('--list-commands', action='store_true', default=False, required=False, help="Show the available commands you can type during the game")
+	parser.add_argument('--adversary', type=str, choices=["None", "Euclid", "Lovelace", "Dijkstra", "Turing"], default="None", required = False, help="If included, game will be against the computer of the specified difficulty")
 	return parser
 
 def main():
@@ -498,10 +501,14 @@ def main():
 	global tiles
 	tiles = tiles + [0]*64
 
-	tiles[27] = 1
-	tiles[28] = 2
-	tiles[35] = 2
-	tiles[36] = 1
+	# fill initial 4 spaces on board
+	tiles[27] = 2
+	tiles[28] = 1
+	tiles[35] = 1
+	tiles[36] = 2
+
+	# intro
+	print("Welcome to Othello!")
 
 	# start main game loop
 	game_loop()
@@ -615,7 +622,7 @@ def configure_players():
 	while not response.lower().strip() == 'y' and not response.lower().strip() == 'yes':
 		potential_color = input("Please enter {}'s color: ".format(player_two_name))
 		response = input("Okay, so {}'s color is {}? (Y/N) ".format(player_two_name, color(potential_color.lower(), potential_color)))
-		if potential_color == player_one_color:
+		if potential_color == player_one_color and (response.lower() == 'yes' or response.lower() == 'y'):
 			response = 'no'
 			print("Sorry, {} is already using {} for their color".format(player_one_name, player_one_color))
 	player_two_color = potential_color
