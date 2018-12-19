@@ -362,6 +362,51 @@ def check_game_status():
 	else:
 		return False
 
+def change_color(player):
+	global player_one_color
+	global player_one_name
+	global player_two_color
+	global player_two_name
+	if player == 1:
+		player_name = color(player_one_color, player_one_name)
+	else:
+		player_name = color(player_two_color, player_two_name)
+
+	response = input("{}, would you like to change your color? (Y/N) ".format(player_name))
+	if response.lower().strip() == 'n' or response.lower().strip() == 'no':
+		return
+	else:
+		response = 'no'
+	while not response.lower().strip() == 'y' and not response.lower().strip() == 'yes':
+		potential_color = input("Okay, what do you want your color to be? You can pick from {}, {}, {}, {}, {}, {}, {}, or white: ".format(
+			grey("grey"),
+			red("red"),
+			green("green"),
+			yellow("yellow"),
+			blue("blue"),
+			pink("pink"),
+			teal("teal")
+		))
+		response = input("Okay, so you'd like to change your color to {}? (Y/N) ".format(color(potential_color.lower(), potential_color)))
+		if adversary_name.lower() == 'none':
+			if potential_color == adversary_color and (response.lower() == 'yes' or response.lower() == 'y'):
+				response = 'no'
+				print("Sorry, {} is already using {} for their color".format(adversary_name, adversary_color))
+		else:
+			if player == 1:
+				if potential_color == player_two_color and (response.lower() == 'yes' or response.lower() == 'y'):
+					response = 'no'
+					print("Sorry, {} is already using {} for their color".format(player_two_name, player_two_color))
+			else:
+				if potential_color == player_one_color and (response.lower() == 'yes' or response.lower() == 'y'):
+					response = 'no'
+					print("Sorry, {} is already using {} for their color".format(player_one_name, player_one_color))
+
+	if player == 1:
+		player_one_color = potential_color
+	else:
+		player_two_color = potential_color
+
 def acquire_move(turn):
 	valid_input = False
 
@@ -392,6 +437,11 @@ def acquire_move(turn):
 		# show commands
 		if attempt.lower().strip() == 'help' or attempt.lower().strip() == 'commands' or attempt.lower().strip() == 'command':
 			show_commands()
+			continue
+
+		# change color
+		if attempt.lower().strip() == 'color':
+			change_color(turn)
 			continue
 
 		# clear screen
@@ -456,6 +506,7 @@ def show_commands():
 	print(" help   -> shows this menu and list of commands (you can also use 'command' or 'commands')")
 	print(" clear  -> clears the screen")
 	print(" score  -> show how many tiles each player has (you can also use 'who's winning?')")
+	print(" color  -> changes the current player's color")
 	print(" exit   -> ends the game (you can also use 'done')")
 
 def is_valid_move(index, player, adversary=False, b=[]):
@@ -639,7 +690,7 @@ def main():
 	tiles[36] = 2
 
 	# TODO: FOR TESTING ONLY
-	# coordinates = {'c3': 1, 'c4': 1, 'c5': 1, 'd3': 2, 'd4': 2, 'd5': 1, 'e4': 2, 'e5': 2, 'e6': 2}
+	# coordinates = {}
 	# test_configuration(coordinates)
 
 	# intro

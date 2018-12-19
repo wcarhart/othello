@@ -106,8 +106,6 @@ def turing(tiles, adversary_color):
 	#  - consider interior vs. frontior disks
 	#  - consider A- and B-squares (prioritize taking wall moves more)
 	#  - consider power moves/attacks for taking corners
-
-	# TODO: optimize STEP 1, iterates through all possible moves like 6 times, really only needs to do it once
 	
 	print("{} is thinking...".format(othello.color(adversary_color, "Alan Turing")))
 	time.sleep(2)
@@ -118,56 +116,20 @@ def turing(tiles, adversary_color):
 			potential_moves.append(index)
 
 	# STEP 1
-	# calculate best move based on maximizing my mobility
-	best_moves_my_mobility = []
-	best_my_mobility = 0
-	for move in potential_moves:
-		copy = [tile for tile in tiles]
-		board = othello.propogate_flips(move, 2, adversary=True, b=copy)
-		mobility = len([index for index in range(64) if othello.is_valid_move(index, 2, adversary=True, b=board) and board[index] == 0])
-		if mobility > best_my_mobility:
-			best_my_mobility = mobility
-			best_moves_my_mobility = [move]
-		elif mobility == best_my_mobility:
-			best_moves_my_mobility.append(move)
-
-	# calculate best move based on minimizing opponents mobility
-	best_moves_your_mobility = []
-	worst_your_mobility = sys.maxsize
-	for move in potential_moves:
-		copy = [tile for tile in tiles]
-		board = othello.propogate_flips(move, 2, adversary=True, b=copy)
-		mobility = len([index for index in range(64) if othello.is_valid_move(index, 1, adversary=True, b=board) and board[index] == 0])
-		if mobility < worst_your_mobility:
-			worst_your_mobility = mobility
-			best_moves_your_mobility = [move]
-		elif mobility == worst_your_mobility:
-			best_moves_your_mobility.append(move)
-
 	# determine if moves could give opponent a corner
 	bad_corner_moves = []
 	for move in potential_moves:
 		copy = [tile for tile in tiles]
 		board = othello.propogate_flips(move, 2, adversary=True, b=copy)
-		bad_move = [index for index in range(64) if othello.is_valid_move(index, 1, adversary=True, b=board) and index in CORNERS]
-		if not bad_move in bad_corner_moves:
-			bad_corner_moves.append(bad_move)
 
-	# determine if move is in an x- or c-square
-	bad_xc_moves = []
-	for move in potential_moves:
-		if move in X_SQUARES and not move in bad_xc_moves:
-			bad_xc_moves.append(move)
-		elif move in C_SQUARES and not move in bad_xc_moves:
-			bad_xc_moves.append(move)
-
+		if not len([index for index in range(64) if othello.is_valid_move(index, 1, adversary=True, b=board) and board[index] == 0 and index in CORNERS]) == 0:
+			bad_corner_moves.append(move)
+			
 	# determine if can get a corner right now
 	good_corner_moves = []
 	for move in potential_moves:
-		if move in CORNERS and not move in good_moves:
-			good_moves.append(move)
-
-
+		if move in CORNERS:
+			good_corner_moves.append(move)
 
 	# STEP 2
 	# begin evaluating move candidates to find best move
@@ -175,29 +137,23 @@ def turing(tiles, adversary_color):
 	if not len(good_corner_moves) == 0:
 		# we can take a corner
 		most_tiles = 0
-		best_move = 0
+		best_move = good_corner_moves[0]
 		for corner_move in good_corner_moves:
 			copy = [tile for tile in tiles]
 			board = othello.propogate_flips(move, 2, adversary=True, b=copy)
 			number_of_tiles = len([tile for tile in board if tile == 2])
 			if number_of_tiles > most_tiles:
 				most_tiles = number_of_tiles
-				best_move = move
+				best_move = corner_move
 	else:
 		# we can't take a corner
-		my_mobility_moves = [move for move in best_moves_my_mobility if not move in bad_corner_moves and not move in bad_xc_moves]
-		your_mobility_moves = [move for move in best_moves_your_mobility if not move in bad_corner_moves and not move in bad_xc_moves]
-		mobility_moves = my_mobility_moves + your_mobility_moves
-
-		if len(mobility_moves) == 0:
-			# we have to consider X-square and C-square moves
-			my_mobility_moves = [move for move in best_moves_my_mobility if not move in bad_corner_moves]
-			your_mobility_moves = [move for move in best_moves_your_mobility if not move in bad_corner_moves]
-			mobility_moves = my_mobility_moves + your_mobility_moves
-
-			if len(mobility_moves) == 0:
-				# we have to consider corner moves
-				mobility_moves = best_moves_my_mobility + best_moves_your_mobility
+		good_moves = [move for move in potential_moves if not move in bad_corner_moves and not move in X_SQUARES and not move in C_SQUARES]
+		if len(good_moves) == 0:
+			good_moves = [move for move in potential_moves if not move in bad_corner_moves and not move in X_SQUARES]
+			if len(good_moves) == 0:
+				good_moves = [move for move in potential_moves if not move in bad_corner_moves]
+				if len(good_moves) == 0:
+					good_moves = potential_moves
 
 		# begin mobility score calculation
 		temp_mobility_scores = {}
@@ -206,7 +162,7 @@ def turing(tiles, adversary_color):
 		max_sweet_score = 0
 
 		# go through all moves and calculate increases in my mobility and decreases in your mobility
-		for move in mobility_moves:
+		for move in good_moves:
 			copy = [tile for tile in tiles]
 			board = othello.propogate_flips(move, 2, adversary=True, b=copy)
 
@@ -237,7 +193,7 @@ def turing(tiles, adversary_color):
 				best_mobility_score = mobility_score
 
 	if best_move == -1:
-		print("ERROR: Alan Turing couldn't find a move")
+		print("ERROR: Alan Turing couldn't find a move!")
 		sys.exit(0)
 
 	print("{} moved to {}!".format(othello.color(adversary_color, "Alan Turing"), othello.get_coordinate_from_index(best_move)))
