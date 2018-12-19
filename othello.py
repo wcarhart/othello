@@ -24,9 +24,6 @@ def game_loop():
 		# acquire next move
 		move = acquire_move(turn)
 
-		# need to check if move is valid for this game (i.e. if that tile is taken, if player is allowed to move there)
-		# TODO
-
 		# update the game board
 		update_game(move, turn)
 
@@ -37,12 +34,87 @@ def game_loop():
 		game_over = check_game_status()
 
 def update_game(move, turn):
+	# add new tile to board
 	tiles[move] = turn
+
+	# update tiles already on board
 	propogate_flips(move, turn)
 
-def propogate_flips(move, turn):
-	# TODO
-	return
+def propogate_flips(move, player):
+	# go in all eight directions and look for another piece of the same color as `turn`
+	# if we find one, flip all in between, if we don't, move on
+
+	to_flip = []
+
+	# west
+	index = move
+	candidates = []
+	while index < 64 and index > -1:
+		candidate = tiles[index]
+		if candidate == 0:
+			break
+		if not candidate == player:
+			candidates.append(index)
+		elif candidate == player:
+			to_flip += candidates
+			break
+		index -= 1
+
+	# east
+	index = move
+	candidates = []
+	while index < 64 and index > -1:
+		candidate = tiles[index]
+		if candidate == 0:
+			break
+		if not candidate == player:
+			candidates.append(index)
+		elif candidate == player:
+			to_flip += candidates
+			break
+		index += 1
+
+	# north
+	index = move
+	candidates = []
+	while index < 64 and index > -1:
+		candidate = tiles[index]
+		if candidate == 0:
+			break
+		if not candidate == player:
+			candidates.append(index)
+		elif candidate == player:
+			to_flip += candidates
+			break
+		index -= 8
+
+	# south
+	index = move
+	candidates = []
+	while index < 64 and index > -1:
+		candidate = tiles[index]
+		if candidate == 0:
+			break
+		if not candidate == player:
+			candidates.append(index)
+		elif candidate == player:
+			to_flip += candidates
+			break
+		index += 8
+
+	# northwest
+
+	# northeast
+
+	# southeast
+
+	# southwest
+
+	flip(to_flip)
+
+def flip(indices):
+	for index in indices:
+		tiles[index] = 1 if tiles[index] == 2 else 1
 
 def check_game_status():
 	empty_spaces = len([tile for tile in tiles if tile == 0])
