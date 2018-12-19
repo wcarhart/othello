@@ -1,5 +1,6 @@
 import sys
 import argparse
+import random
 
 tiles = []
 CORNERS = [0, 7, 56, 63]
@@ -12,6 +13,8 @@ player_one_name = "Player 1"
 player_one_color = "red"
 player_two_name = "Player 2"
 player_two_color = "green"
+adversary_name = ""
+adversary_color = ""
 
 def flashing(text):
 	return "\033[5m{}\033[0m".format(text)
@@ -60,8 +63,54 @@ def color(color, text):
 	else:
 		return text
 
-def game_loop():
+def adversary_game_loop(adversary):
+	player_name = color(player_one_color, player_one_name)
+	print("{} vs. {}".format(color(player_one_color, player_one_name), color(adversary_color, adversary_name)))
 
+	turn = 1
+	game_over = False
+	while not game_over:
+		# print board for players to see
+		print_board()
+
+		if turn == 1:
+			if has_any_moves(turn):
+				move = acquire_move(turn)
+			else:
+				turn = 2
+				if has_any_moves(turn):
+					print("Sorry {}, you don't have any moves left!".format(player_name))
+					move = acquire_move_from_intelligence(tiles, adversary)
+				else:
+					game_over = True
+					break
+		else:
+			move = acquire_move_from_intelligence(tiles, adversary)
+
+		# update the game board
+		update_game(move, turn)
+
+		# change turns to next player
+		turn = 1 if turn == 2 else 2
+
+		# check if game has ended
+		game_over = check_game_status()
+
+	if game_over:
+		print_board()
+		print("")
+		player_one_score = len([tile for tile in tiles if tile == 1])
+		player_two_score = len([tile for tile in tiles if tile == 2])
+		if player_one_score > player_two_score:
+			print("{} wins!".format(color(player_one_color, player_one_name)))
+		elif player_two_score > player_one_score:
+			print("{} wins!".format(color(player_two_color, player_two_name)))
+		else:
+			print("It's a tie!")
+		print("  {}'s score: {}".format(color(player_one_color, player_one_name), player_one_score))
+		print("  {}'s score: {}".format(color(player_two_color, player_two_name), player_two_score))
+
+def game_loop():
 	print("{} vs. {}".format(color(player_one_color, player_one_name), color(player_two_color, player_two_name)))
 
 	turn = 1
@@ -497,6 +546,12 @@ def main():
 	if args.list_commands:
 		show_commands()
 
+	if not args.adversary.lower() == 'none':
+		compose_adversary(args.adversary)
+	else:
+		global against_adversary
+		against_adversary = False
+
 	# define game board
 	global tiles
 	tiles = tiles + [0]*64
@@ -511,7 +566,54 @@ def main():
 	print("Welcome to Othello!")
 
 	# start main game loop
-	game_loop()
+	if args.adversary.lower() == 'none':
+		game_loop()
+	else:
+		adversary_game_loop(args.adversary)
+
+def compose_adversary(adversary):
+	global adversary_name
+	global adversary_color
+	global against_adversary
+	against_adversary = True
+	global player_one_name
+	global player_one_color
+	response = input("So, you'd like to challenge {}? (Y/N) ".format(adversary))
+	if response.lower().strip() == 'y' or response.lower().strip() == 'yes':
+
+		# player info
+		potential_name = input("What is your name? ")
+		response = input("Okay, so your name is {}? (Y/N) ".format(potential_name))
+		while not response.lower().strip() == 'y' and not response.lower().strip() == 'yes':
+			potential_name = input("Please enter your name: ")
+			response = input("Okay, so your name is {}? (Y/N) ".format(potential_name))
+		player_one_name = potential_name
+
+		potential_color = input("Okay, what is your color? You can pick from {}, {}, {}, {}, {}, {}, {}, or white: ".format(
+			grey("grey"),
+			red("red"),
+			green("green"),
+			yellow("yellow"),
+			blue("blue"),
+			pink("pink"),
+			teal("teal")
+		))
+		response = input("Okay so your color is {}? (Y/N) ".format(color(potential_color.lower(), potential_color)))
+		while not response.lower().strip() == 'y' and not response.lower().strip() == 'yes':
+			potential_color = input("Please enter your color: ")
+			response = input("Okay, so your color is {}? (Y/N) ".format(color(potential_color.lower(), potential_color)))
+		player_one_color = potential_color
+
+		# adversary info
+		adversary_name = adversary
+		colors = ['red', 'green', 'grey', 'yellow', 'blue', 'pink', 'teal']
+		if player_one_color in colors:
+			colors.remove(player_one_color)
+		adversary_color = random.choice(colors)
+	else:
+		print("Very well, better luck next time")
+		sys.exit(0)
+
 
 def print_board_with_hints(player):
 	# determine possible moves
@@ -534,7 +636,10 @@ def print_board_with_hints(player):
 			elif temp_board[index] == 1:
 				text = color(player_one_color, "*")
 			elif temp_board[index] == 2:
-				text = color(player_two_color, "*")
+				if against_adversary:
+					text = color(adversary_color, "*")
+				else:
+					text = color(player_two_color, "*")
 			else:
 				text = flashing(white("*"))
 			
@@ -558,7 +663,10 @@ def print_board():
 			elif tiles[index] == 1:
 				text = color(player_one_color, "*")
 			elif tiles[index] == 2:
-				text = color(player_two_color, "*")
+				if against_adversary:
+					text = color(adversary_color, "*")
+				else:
+					text = color(player_two_color, "*")
 			else:
 				# error
 				pass
