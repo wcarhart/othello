@@ -180,7 +180,21 @@ def turing(tiles, adversary_color):
 		# bound mobility scores between 0 and 1
 		mobility_scores = {}
 		for move, scores in temp_mobility_scores.items():
-			mobility_scores[move] = ((scores[0]/max_my_mobility), (scores[1]/min_your_mobility), (scores[2])/max_sweet_score)
+			if max_my_mobility == 0:
+				my_mobility_score = 0
+			else:
+				my_mobility_score = (scores[0]/max_my_mobility)
+
+			if min_your_mobility == sys.maxsize:
+				your_mobility_score = 0
+			else:
+				your_mobility_score = (scores[1]/min_your_mobility)
+
+			if max_sweet_score == 0:
+				max_sweet = 0
+			else:
+				max_sweet = (scores[2]/max_sweet_score)
+			mobility_scores[move] = (my_mobility_score, your_mobility_score, max_sweet)
 
 		# give each move a final mobility score to rank them
 		best_move = 0

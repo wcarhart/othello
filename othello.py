@@ -61,6 +61,64 @@ def color(color, text):
 	else:
 		return text
 
+def spectate_game_loop():
+	name_one = color(player_one_color, player_one_name)
+	name_two = color(player_two_color, player_two_name)
+	print("{} vs. {}".format(name_one, name_two))
+	print("{} says: {}".format(name_one, get_taunts(player_one_name, 'start')))
+	print("{} says: {}".format(name_two, get_taunts(player_two_name, 'start')))
+
+	turn = 1
+	game_over = False
+	while not game_over:
+		# print board for players to see
+		print_board()
+
+		if has_any_moves(turn):
+			if turn == 1:
+				move = intelligence.acquire_move_from_intelligence(tiles, player_one_name, player_one_color)
+			else:
+				move = intelligence.acquire_move_from_intelligence(tiles, player_two_name, player_two_color)
+		else:
+			turn = 1 if turn == 2 else 2
+			if has_any_moves(turn):
+				if turn == 1:
+					player_name = color(player_one_color, player_one_name)
+					print("Sorry {}, you don't have any moves left!".format(player_name))
+					move = intelligence.acquire_move_from_intelligence(tiles, player_two_name, player_two_color)
+				else:
+					player_name = color(player_two_color, player_two_name)
+					print("Sorry {}, you don't have any moves left!".format(player_name))
+					move = intelligence.acquire_move_from_intelligence(tiles, player_one_name, player_one_color)
+			else:
+				game_over = True
+				break
+
+		# update the game board
+		update_game(move, turn)
+
+		# change turns to next player
+		turn = 1 if turn == 2 else 2
+
+		# check if game has ended
+		game_over = check_game_status()
+
+	if game_over:
+		print_board()
+		print("")
+		player_one_score = len([tile for tile in tiles if tile == 1])
+		adversary_score = len([tile for tile in tiles if tile == 2])
+		if player_one_score > player_two_score:
+			print("{} wins!".format(color(player_one_color, player_one_name)))
+			print("{} says: {}".format(color(player_one_color, player_one_name), get_taunts(player_one_name, 'lose')))
+		elif player_two_score > player_one_score:
+			print("{} wins!".format(color(player_two_color, player_two_name)))
+			print("{} says: {}".format(color(player_two_color, player_two_name), get_taunts(player_two_name, 'win')))
+		else:
+			print("It's a tie!")
+		print("  {}'s score: {}".format(color(player_one_color, player_one_name), player_one_score))
+		print("  {}'s score: {}".format(color(player_two_color, player_two_name), player_two_score))
+
 def adversary_game_loop(adversary):
 	player_name = color(player_one_color, player_one_name)
 	print("{} vs. {}".format(color(player_one_color, player_one_name), color(adversary_color, adversary_name)))
@@ -677,7 +735,9 @@ def build_parser():
 	parser = argparse.ArgumentParser(description=__doc__, formatter_class = argparse.ArgumentDefaultsHelpFormatter)
 	parser.add_argument('--setup', action='store_true', default=False, required=False, help="Set up player configuration before starting the game")
 	parser.add_argument('--list-commands', action='store_true', default=False, required=False, help="Show the available commands you can type during the game")
-	parser.add_argument('--adversary', type=str, choices=["None", "Euclid", "Lovelace", "Dijkstra", "Turing"], default="None", required = False, help="If included, game will be against the computer of the specified difficulty")
+	group = parser.add_mutually_exclusive_group(required=False)
+	group.add_argument('--adversary', type=str, choices=["None", "Euclid", "Lovelace", "Dijkstra", "Turing"], default="None", required=False, help="If included, game will be against the computer of the specified difficulty")
+	group.add_argument('--spectate', action='store_true', default=False, required=False, help='If included, human will spectate to specified adversaries')
 	return parser
 
 def main():
@@ -707,19 +767,73 @@ def main():
 	tiles[35] = 1
 	tiles[36] = 2
 
+	# TODO: for testing only
+	# coordinates = {'a3': 1, 'b3': 2, 'b4': 2, 'b5': 2, 'c5': 2, 'd4': 2, 'd5': 2, 'd6': 2, 'e3': 2, 'e4': 1, 'e5': 2, 'f2': 2, 'f3': 2, 'f4': 2, 'f5': 2, 'g3': 2}
+	# test_configuration(coordinates)
+
 	# intro
 	print("\nWelcome to Othello!")
 
-	# start main game loop
-	if args.adversary.lower() == 'none':
-		game_loop()
+	if args.spectate:
+		start_spectate()
 	else:
-		adversary_game_loop(args.adversary)
+		# start main game loop
+		if args.adversary.lower() == 'none':
+			game_loop()
+		else:
+			adversary_game_loop(args.adversary)
 
 def test_configuration(coordinates):
 	"""FOR TESTING PURPOSES ONLY"""
 	for coordinate, value in coordinates.items():
 		tiles[get_index_from_coordinate(coordinate)] = int(value)
+
+def start_spectate():
+	global player_one_name
+	global player_one_color
+	global player_two_name
+	global player_two_color
+
+	available_colors = ['red', 'green', 'yellow', 'grey', 'blue', 'teal', 'pink']
+	random.shuffle(available_colors)
+
+	valid_response = False
+	potential_player = input("Who should be the first player? You can pick from Euclid, Lovelace, Dijkstra, or Turing: ")
+	while not valid_response:
+		if not (potential_player.lower().strip() == 'euclid' or potential_player.lower().strip() == 'lovelace' or potential_player.lower().strip() == 'dijkstra' or potential_player.lower().strip() == 'turing'):
+			valid_response = False
+			potential_player = input("Please pick from Euclid, Lovelace, Dijkstra, or Turing: ")
+		else:
+			valid_response = True
+	if potential_player.lower().strip() == 'euclid':
+		player_one_name = "Euclid"
+	elif potential_player.lower().strip() == 'lovelace':
+		player_one_name = "Lovelace"
+	elif potential_player.lower().strip() == 'dijkstra':
+		player_one_name = "Dijkstra"
+	elif potential_player.lower().strip() == 'turing':
+		player_one_name = "Turing"
+	player_one_color = available_colors[0]
+
+	valid_response = False
+	potential_player = input("Who should be the second player? You can pick from Euclid, Lovelace, Dijkstra, or Turing: ")
+	while not valid_response:
+		if not (potential_player.lower().strip() == 'euclid' or potential_player.lower().strip() == 'lovelace' or potential_player.lower().strip() == 'dijkstra' or potential_player.lower().strip() == 'turing'):
+			valid_response = False
+			potential_player = input("Please pick from Euclid, Lovelace, Dijkstra, or Turing: ")
+		else:
+			valid_response = True
+	if potential_player.lower().strip() == 'euclid':
+		player_two_name = "Euclid"
+	elif potential_player.lower().strip() == 'lovelace':
+		player_two_name = "Lovelace"
+	elif potential_player.lower().strip() == 'dijkstra':
+		player_two_name = "Dijkstra"
+	elif potential_player.lower().strip() == 'turing':
+		player_two_name = "Turing"
+	player_two_color = available_colors[1]
+
+	spectate_game_loop()
 
 def compose_adversary(adversary):
 	global adversary_name
