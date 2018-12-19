@@ -200,7 +200,6 @@ def turing(tiles, adversary_color):
 	time.sleep(2)
 	return best_move
 
-
 def calculate_sweet_16_score(board, player):
 	score = 0
 	for tile in SWEET_16:
@@ -215,19 +214,3 @@ def calculate_my_mobility(board, player):
 def calculate_your_mobility(board, player):
 	mobility = len([index for index in range(64) if othello.is_valid_move(index, player if player == 2 else 1, adversary=True, b=board) and board[index] == 0])
 	return mobility
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

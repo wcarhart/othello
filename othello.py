@@ -64,7 +64,7 @@ def color(color, text):
 def adversary_game_loop(adversary):
 	player_name = color(player_one_color, player_one_name)
 	print("{} vs. {}".format(color(player_one_color, player_one_name), color(adversary_color, adversary_name)))
-	get_taunts(adversary, 'start')
+	print("{} says: {}".format(color(adversary_color, adversary_name), get_taunts(adversary, 'start')))
 
 	turn = 1
 	game_over = False
@@ -102,25 +102,43 @@ def adversary_game_loop(adversary):
 		adversary_score = len([tile for tile in tiles if tile == 2])
 		if player_one_score > adversary_score:
 			print("{} wins!".format(color(player_one_color, player_one_name)))
-			get_taunts(adversary, 'lose')
+			print("{} says: {}".format(color(adversary_color, adversary_name), get_taunts(adversary, 'lose')))
 		elif adversary_score > player_one_score:
 			print("{} wins!".format(color(adversary_color, adversary_name)))
-			get_taunts(adversary, 'win')
+			print("{} says: {}".format(color(adversary_color, adversary_name), get_taunts(adversary, 'win')))
 		else:
 			print("It's a tie!")
 		print("  {}'s score: {}".format(color(player_one_color, player_one_name), player_one_score))
 		print("  {}'s score: {}".format(color(adversary_color, adversary_name), adversary_score))
 
 def get_taunts(adversary, state):
-	# TODO
 	if state == 'start':
-		return
+		if adversary.lower() == 'euclid':
+			return "The Euclidian algorithm isn't the only one I know!"
+		elif adversary.lower() == 'lovelace':
+			return "My Difference Engine is ready to compute your defeat!"
+		elif adversary.lower() == 'dijkstra':
+			return "I'll find the quickest path to your defeat!"
+		elif adversary.lower() == 'turing':
+			return "My bombes will win this game in no time!"
 	elif state == 'win':
-		return
+		if adversary.lower() == 'euclid':
+			return "Looks like you need to go back to geometry!"
+		elif adversary.lower() == 'lovelace':
+			return "You wouldn't even be a match for my dear Charles Babbage!"
+		elif adversary.lower() == 'dijkstra':
+			return "Looks like you need an easier opponent, try playing Bellman and Ford!"
+		elif adversary.lower() == 'turing':
+			return "How you even fathomed the idea that you could beat me is an enigma!"
 	elif state == 'lose':
-		return
-	else:
-		return
+		if adversary.lower() == 'euclid':
+			return "Guess I better stick to philosophy!"
+		elif adversary.lower() == 'lovelace':
+			return "I'll have to attempt this challenge again on a better Analytical Engine!"
+		elif adversary.lower() == 'dijkstra':
+			return "Well, I guess I was being a little greedy!"
+		elif adversary.lower() == 'turing':
+			return "Nonsense, I must return to Bletchley at once to continue my research on this wretched game!"
 
 def game_loop():
 	print("{} vs. {}".format(color(player_one_color, player_one_name), color(player_two_color, player_two_name)))
@@ -689,12 +707,8 @@ def main():
 	tiles[35] = 1
 	tiles[36] = 2
 
-	# TODO: FOR TESTING ONLY
-	# coordinates = {}
-	# test_configuration(coordinates)
-
 	# intro
-	print("Welcome to Othello!")
+	print("\nWelcome to Othello!")
 
 	# start main game loop
 	if args.adversary.lower() == 'none':
