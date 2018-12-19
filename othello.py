@@ -1,6 +1,7 @@
 import sys
 import argparse
 import random
+import intelligence
 
 tiles = []
 CORNERS = [0, 7, 56, 63]
@@ -80,12 +81,12 @@ def adversary_game_loop(adversary):
 				turn = 2
 				if has_any_moves(turn):
 					print("Sorry {}, you don't have any moves left!".format(player_name))
-					move = acquire_move_from_intelligence(tiles, adversary)
+					move = intelligence.acquire_move_from_intelligence(tiles, adversary, adversary_color)
 				else:
 					game_over = True
 					break
 		else:
-			move = acquire_move_from_intelligence(tiles, adversary)
+			move = intelligence.acquire_move_from_intelligence(tiles, adversary, adversary_color)
 
 		# update the game board
 		update_game(move, turn)
@@ -171,6 +172,31 @@ def update_game(move, turn):
 
 	# update tiles already on board
 	propogate_flips(move, turn)
+
+def get_coordinate_from_index(index):
+	coordinate = ''
+	tens = index // 8
+	if tens == 0:
+		coordinate += 'A'
+	elif tens == 1:
+		coordinate += 'B'
+	elif tens == 2:
+		coordinate += 'C'
+	elif tens == 3:
+		coordinate += 'D'
+	elif tens == 4:
+		coordinate += 'E'
+	elif tens == 5:
+		coordinate += 'F'
+	elif tens == 6:
+		coordinate += 'G'
+	elif tens == 7:
+		coordinate += 'H'
+
+	ones = (index+1) % 8
+	coordinate += str(ones)
+
+	return coordinate
 
 def propogate_flips(move, player):
 	# go in all eight directions and look for another piece of the same color as `turn`
@@ -380,21 +406,26 @@ def acquire_move(turn):
 
 def show_commands():
 	print("====Command list====")
-	print(" B6     -> will attempt to place new tile on location B6")
-	print(" show   -> will redraw the current board")
-	print(" where  -> will show possible moves for the current player (you can also use 'hint' or 'where can I go?')")
-	print(" help   -> show this menu and list of commands (you can also use 'command' or 'commands')")
-	print(" clear  -> clear the screen")
-	print(" exit   -> will end the game (you can also use 'done')")
+	print(" B6     -> attempts to place new tile on location B6")
+	print(" show   -> redraws the current board")
+	print(" where  -> shows possible moves for the current player (you can also use 'hint' or 'where can I go?')")
+	print(" help   -> shows this menu and list of commands (you can also use 'command' or 'commands')")
+	print(" clear  -> clears the screen")
+	print(" exit   -> ends the game (you can also use 'done')")
 
-def is_valid_move(index, player):
+def is_valid_move(index, player, new=False, b=[]):
 	# go through each tile on the board, check eight directions and see if there's a valid sandwich
+
+	if new:
+		board = b
+	else:
+		board = tiles
 
 	# west
 	temp = index - 1
 	fillings = 0
 	while temp < 64 and temp > -1:
-		tile_value = tiles[temp]
+		tile_value = board[temp]
 		if tile_value == 0:
 			break
 		if not tile_value == player:
@@ -410,7 +441,7 @@ def is_valid_move(index, player):
 	temp = index + 1
 	fillings = 0
 	while temp < 64 and temp > -1:
-		tile_value = tiles[temp]
+		tile_value = board[temp]
 		if tile_value == 0:
 			break
 		if not tile_value == player:
@@ -426,7 +457,7 @@ def is_valid_move(index, player):
 	temp = index - 8
 	fillings = 0
 	while temp < 64 and temp > -1:
-		tile_value = tiles[temp]
+		tile_value = board[temp]
 		if tile_value == 0:
 			break
 		if not tile_value == player:
@@ -442,7 +473,7 @@ def is_valid_move(index, player):
 	temp = index + 8
 	fillings = 0
 	while temp < 64 and temp > -1:
-		tile_value = tiles[temp]
+		tile_value = board[temp]
 		if tile_value == 0:
 			break
 		if not tile_value == player:
@@ -458,7 +489,7 @@ def is_valid_move(index, player):
 	temp = index - 9
 	fillings = 0
 	while temp < 64 and temp > -1:
-		tile_value = tiles[temp]
+		tile_value = board[temp]
 		if tile_value == 0:
 			break
 		if not tile_value == player:
@@ -476,7 +507,7 @@ def is_valid_move(index, player):
 	temp = index - 7
 	fillings = 0
 	while temp < 64 and temp > -1:
-		tile_value = tiles[temp]
+		tile_value = board[temp]
 		if tile_value == 0:
 			break
 		if not tile_value == player:
@@ -494,7 +525,7 @@ def is_valid_move(index, player):
 	temp = index + 9
 	fillings = 0
 	while temp < 64 and temp > -1:
-		tile_value = tiles[temp]
+		tile_value = board[temp]
 		if tile_value == 0:
 			break
 		if not tile_value == player:
@@ -512,7 +543,7 @@ def is_valid_move(index, player):
 	temp = index + 7
 	fillings = 0
 	while temp < 64 and temp > -1:
-		tile_value = tiles[temp]
+		tile_value = board[temp]
 		if tile_value == 0:
 			break
 		if not tile_value == player:
@@ -624,6 +655,8 @@ def print_board_with_hints(player):
 		else:
 			temp_board[index] = tiles[index]
 
+	potential_moves = []
+
 	# display board
 	print("\n  1 2 3 4 5 6 7 8")
 	cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
@@ -642,14 +675,20 @@ def print_board_with_hints(player):
 					text = color(player_two_color, "*")
 			else:
 				text = flashing(white("*"))
+				potential_moves.append(get_coordinate_from_index(index))
 			
 			print("{} ".format(text), end='', flush=True)
 		print("")
+
 	if player == 1:
 		player_name = color(player_one_color, player_one_name)
 	else:
 		player_name = color(player_two_color, player_two_name)
 	print("{}, you can move to any of the above {}".format(player_name, flashing("flashing locations")))
+	
+	if not len(potential_moves) == 0:
+		movelist = ", ".join(potential_moves)
+		print("You can move to {}".format(movelist))
 
 def print_board():
 	print("\n  1 2 3 4 5 6 7 8")
