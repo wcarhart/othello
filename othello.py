@@ -104,7 +104,7 @@ def game_loop():
 def has_any_moves(player):
 	temp_board = [0]*64
 	for index in range(64):
-		if is_valid_move(index, player):
+		if is_valid_move(index, player) and tiles[index] == 0:
 			return True
 	return False
 
@@ -273,6 +273,16 @@ def acquire_move(turn):
 			print_board_with_hints(turn)
 			continue
 
+		# show commands
+		if attempt.lower().strip() == 'help' or attempt.lower().strip() == 'commands' or attempt.lower().strip() == 'command':
+			show_commands()
+			continue
+
+		# clear screen
+		if attempt.lower().strip() == 'clear':
+			print(chr(27) + "[2J")
+			continue
+
 		# incorrect length
 		if not len(attempt) == 2:
 			print(" Invalid input, must be in the form of 'xN', where 'x' (row) is a letter between A and H and 'N' (column) is a number between 1 and 8")
@@ -310,6 +320,15 @@ def acquire_move(turn):
 		valid_input = True
 
 	return index
+
+def show_commands():
+	print("====Command list====")
+	print(" B6     -> will attempt to place new tile on location B6")
+	print(" show   -> will redraw the current board")
+	print(" where  -> will show possible moves for the current player (you can also use 'hint' or 'where can I go?')")
+	print(" help   -> show this menu and list of commands (you can also use 'command' or 'commands')")
+	print(" clear  -> clear the screen")
+	print(" exit   -> will end the game (you can also use 'done')")
 
 def is_valid_move(index, player):
 	# go through each tile on the board, check eight directions and see if there's a valid sandwich
@@ -446,7 +465,8 @@ def is_valid_move(index, player):
 
 def build_parser():
 	parser = argparse.ArgumentParser(description=__doc__, formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-	parser.add_argument('-c', '--config', action='store_true', default=False, required=False, help="Set up player configuration before starting the game")
+	parser.add_argument('--setup', action='store_true', default=False, required=False, help="Set up player configuration before starting the game")
+	parser.add_argument('--list-commands', action='store_true', default=False, required=True, help="Show the available commands you can type during the game")
 	return parser
 
 def main():
@@ -454,8 +474,11 @@ def main():
 	parser = build_parser()
 	args = parser.parse_args()
 
-	if args.config:
+	if args.setup:
 		configure_players()
+
+	if args.list_commands:
+		show_commands()
 
 	# define game board
 	global tiles
@@ -472,7 +495,7 @@ def print_board_with_hints(player):
 	# determine possible moves
 	temp_board = [0]*64
 	for index in range(64):
-		if is_valid_move(index, player):
+		if is_valid_move(index, player) and tiles[index] == 0:
 			temp_board[index] = -1
 		else:
 			temp_board[index] = tiles[index]
