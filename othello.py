@@ -3,6 +3,12 @@ import sys
 import argparse
 
 tiles = []
+CORNERS = [0, 7, 56, 63]
+WEST_EDGES = [0, 8, 16, 24, 32, 40, 48, 56]
+NORTH_EDGES = [0, 1, 2, 3, 4, 5, 6, 7]
+EAST_EDGES = [7, 15, 23, 31, 39, 47, 55]
+SOUTH_EDGES = [56, 57, 58, 59, 60, 61, 62, 63]
+
 player_one_name = "Player 1"
 player_one_color = "red"
 player_two_name = "Player 2"
@@ -411,6 +417,8 @@ def is_valid_move(index, player):
 				return True
 			else:
 				break
+		if temp in WEST_EDGES:
+			break
 		temp -= 9
 
 	# northeast
@@ -427,6 +435,8 @@ def is_valid_move(index, player):
 				return True
 			else:
 				break
+		if temp in EAST_EDGES:
+			break
 		temp -= 7
 
 	# southeast
@@ -443,6 +453,8 @@ def is_valid_move(index, player):
 				return True
 			else:
 				break
+		if temp in EAST_EDGES:
+			break
 		temp += 9
 
 	# southwest
@@ -459,6 +471,8 @@ def is_valid_move(index, player):
 				return True
 			else:
 				break
+		if temp in WEST_EDGES:
+			break
 		temp += 7
 
 	return False
@@ -483,6 +497,7 @@ def main():
 	# define game board
 	global tiles
 	tiles = tiles + [0]*64
+
 	tiles[27] = 1
 	tiles[28] = 2
 	tiles[35] = 2
