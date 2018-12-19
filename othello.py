@@ -3,6 +3,10 @@ import sys
 import argparse
 
 tiles = []
+player_one_name = "Player 1"
+player_one_color = "red"
+player_two_name = "Player 2"
+player_two_color = "green"
 
 def flashing(text):
 	return "\033[5m{}\033[0m".format(text)
@@ -31,6 +35,26 @@ def teal(text):
 def white(text):
 	return "\033[97m{}\033[0m".format(text)
 
+def color(color, text):
+	if color.lower() == 'grey':
+		return grey(text)
+	elif color.lower() == 'red':
+		return red(text)
+	elif color.lower() == 'green':
+		return green(text)
+	elif color.lower() == 'yellow':
+		return yellow(text)
+	elif color.lower() == 'blue':
+		return blue(text)
+	elif color.lower() == 'pink':
+		return pink(text)
+	elif color.lower() == 'teal':
+		return teal(text)
+	elif color.lower() == 'white':
+		return white(text)
+	else:
+		return text
+
 def game_loop():
 	turn = 1
 	game_over = False
@@ -39,7 +63,20 @@ def game_loop():
 		print_board()
 
 		# acquire next move
-		move = acquire_move(turn)
+		if has_any_moves(turn):
+			move = acquire_move(turn)
+		else:
+			turn = 1 if turn == 2 else 2
+			if has_any_moves(turn):
+				if turn == 1:
+					player_name = color(player_one_color, player_one_name)
+				else:
+					player_name = color(player_two_color, player_two_name)
+				print("Sorry {}, you don't have any moves left!".format(player_name))
+				move = acquire_move(turn)
+			else:
+				game_over = True
+				break
 
 		# update the game board
 		update_game(move, turn)
@@ -49,6 +86,27 @@ def game_loop():
 
 		# check if game has ended
 		game_over = check_game_status()
+
+	if game_over:
+		print_board()
+		print("")
+		player_one_score = len([tile for tile in tiles if tile == 1])
+		player_two_score = len([tile for tile in tiles if tile == 2])
+		if player_one_score > player_two_score:
+			print("{} wins!".format(color(player_one_color, player_one_name)))
+		elif player_two_score > player_one_score:
+			print("{} wins!".format(color(player_two_color, player_two_name)))
+		else:
+			print("It's a tie!")
+		print("  {}'s score: {}".format(color(player_one_color, player_one_name), player_one_score))
+		print("  {}'s score: {}".format(color(player_two_color, player_two_name), player_two_score))
+
+def has_any_moves(player):
+	temp_board = [0]*64
+	for index in range(64):
+		if is_valid_move(index, player):
+			return True
+	return False
 
 def update_game(move, turn):
 	# add new tile to board
@@ -194,24 +252,24 @@ def acquire_move(turn):
 	while not valid_input:
 		# determine whose turn it is
 		if turn == 1:
-			player_name = red("Player 1")
+			player_name = color(player_one_color, player_one_name)
 		else:
-			player_name = green("Player 2")
+			player_name = color(player_two_color, player_two_name)
 
 		# prompt user for move
 		attempt = input("{}, where do you want to move? ".format(player_name))
 
 		# exit
-		if attempt == 'exit' or attempt == 'done':
+		if attempt.lower().strip() == 'exit' or attempt.lower().strip() == 'done':
 			sys.exit(0)
 
 		# show board again
-		if attempt == 'show':
+		if attempt.lower().strip() == 'show':
 			print_board()
 			continue
 
 		# display possible moves
-		if attempt == 'where':
+		if attempt.lower().strip() == 'where' or attempt.lower().strip() == 'where can i go' or attempt.lower().strip() == 'where can i go?':
 			print_board_with_hints(turn)
 			continue
 
@@ -397,8 +455,7 @@ def main():
 	args = parser.parse_args()
 
 	if args.config:
-		# TODO
-		pass
+		configure_players()
 
 	# define game board
 	global tiles
@@ -430,14 +487,19 @@ def print_board_with_hints(player):
 			if temp_board[index] == 0:
 				text = grey("-")
 			elif temp_board[index] == 1:
-				text = red("*")
+				text = color(player_one_color, "*")
 			elif temp_board[index] == 2:
-				text = green("*")
+				text = color(player_two_color, "*")
 			else:
 				text = flashing(white("*"))
 			
 			print("{} ".format(text), end='', flush=True)
 		print("")
+	if player == 1:
+		player_name = color(player_one_color, player_one_name)
+	else:
+		player_name = color(player_two_color, player_two_name)
+	print("{}, you can move to any of the above {}".format(player_name, flashing("flashing locations")))
 
 def print_board():
 	print("\n  1 2 3 4 5 6 7 8")
@@ -449,9 +511,9 @@ def print_board():
 			if tiles[index] == 0:
 				text = grey("-")
 			elif tiles[index] == 1:
-				text = red("*")
+				text = color(player_one_color, "*")
 			elif tiles[index] == 2:
-				text = green("*")
+				text = color(player_two_color, "*")
 			else:
 				# error
 				pass
@@ -459,6 +521,66 @@ def print_board():
 			print("{} ".format(text), end='', flush=True)
 		print("")
 
+def configure_players():
+	global player_one_name
+	global player_one_color
+	global player_two_name
+	global player_two_color
+
+	# player one
+	potential_name = input("Hi there, what is player one's name? ")
+	response = input("Okay, so your name is {}? (Y/N) ".format(potential_name))
+	while not response.lower().strip() == 'y' and not response.lower().strip() == 'yes':
+		potential_name = input("Please enter player one's name: ")
+		response = input("Okay, so your name is {}? (Y/N) ".format(potential_name))
+	player_one_name = potential_name
+
+	potential_color = input("Okay, what is {}'s color? You can pick from {}, {}, {}, {}, {}, {}, {}, or white: ".format(
+		player_one_name, 
+		grey("grey"),
+		red("red"),
+		green("green"),
+		yellow("yellow"),
+		blue("blue"),
+		pink("pink"),
+		teal("teal")
+	))
+	response = input("Okay so {}'s color is {}? (Y/N) ".format(player_one_name, color(potential_color.lower(), potential_color)))
+	while not response.lower().strip() == 'y' and not response.lower().strip() == 'yes':
+		potential_color = input("Please enter {}'s color: ".format(player_one_name))
+		response = input("Okay, so {}'s color is {}? (Y/N) ".format(player_one_name, color(potential_color.lower(), potential_color)))
+	player_one_color = potential_color
+
+	# player two
+	print("")
+	potential_name = input("And now what is player two's name? ")
+	response = input("Okay, so your name is {}? (Y/N) ".format(potential_name))
+	while not response.lower().strip() == 'y' and not response.lower().strip() == 'yes':
+		potential_name = input("Please enter player two's name: ")
+		response = input("Okay, so your name is {}? (Y/N) ".format(potential_name))
+	player_two_name = potential_name
+
+	potential_color = input("Okay, what is {}'s color? You can pick from {}, {}, {}, {}, {}, {}, {}, or white: ".format(
+		player_two_name, 
+		grey("grey"),
+		red("red"),
+		green("green"),
+		yellow("yellow"),
+		blue("blue"),
+		pink("pink"),
+		teal("teal")
+	))
+	response = input("Okay so {}'s color is {}? (Y/N) ".format(player_two_name, color(potential_color.lower(), potential_color)))
+	if potential_color == player_one_color:
+		response = 'no'
+		print("Sorry, {} is already using {} for their color".format(player_one_name, color(player_one_color, player_one_color)))
+	while not response.lower().strip() == 'y' and not response.lower().strip() == 'yes':
+		potential_color = input("Please enter {}'s color: ".format(player_two_name))
+		response = input("Okay, so {}'s color is {}? (Y/N) ".format(player_two_name, color(potential_color.lower(), potential_color)))
+		if potential_color == player_one_color:
+			response = 'no'
+			print("Sorry, {} is already using {} for their color".format(player_one_name, player_one_color))
+	player_two_color = potential_color
 
 if __name__ == '__main__':
 	main()
