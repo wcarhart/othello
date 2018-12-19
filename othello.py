@@ -47,7 +47,7 @@ def propogate_flips(move, player):
 	to_flip = []
 
 	# west
-	index = move
+	index = move - 1
 	candidates = []
 	while index < 64 and index > -1:
 		candidate = tiles[index]
@@ -61,7 +61,7 @@ def propogate_flips(move, player):
 		index -= 1
 
 	# east
-	index = move
+	index = move + 1
 	candidates = []
 	while index < 64 and index > -1:
 		candidate = tiles[index]
@@ -75,7 +75,7 @@ def propogate_flips(move, player):
 		index += 1
 
 	# north
-	index = move
+	index = move - 8
 	candidates = []
 	while index < 64 and index > -1:
 		candidate = tiles[index]
@@ -89,7 +89,7 @@ def propogate_flips(move, player):
 		index -= 8
 
 	# south
-	index = move
+	index = move + 8
 	candidates = []
 	while index < 64 and index > -1:
 		candidate = tiles[index]
@@ -103,18 +103,66 @@ def propogate_flips(move, player):
 		index += 8
 
 	# northwest
+	index = move - 9
+	candidates = []
+	while index < 64 and index > -1:
+		candidate = tiles[index]
+		if candidate == 0:
+			break
+		if not candidate == player:
+			candidates.append(index)
+		elif candidate == player:
+			to_flip += candidates
+			break
+		index -= 9
 
 	# northeast
+	index = move - 7
+	candidates = []
+	while index < 64 and index > -1:
+		candidate = tiles[index]
+		if candidate == 0:
+			break
+		if not candidate == player:
+			candidates.append(index)
+		elif candidate == player:
+			to_flip += candidates
+			break
+		index -= 7
 
 	# southeast
+	index = move + 9
+	candidates = []
+	while index < 64 and index > -1:
+		candidate = tiles[index]
+		if candidate == 0:
+			break
+		if not candidate == player:
+			candidates.append(index)
+		elif candidate == player:
+			to_flip += candidates
+			break
+		index += 9
 
 	# southwest
+	index = move + 7
+	candidates = []
+	while index < 64 and index > -1:
+		candidate = tiles[index]
+		if candidate == 0:
+			break
+		if not candidate == player:
+			candidates.append(index)
+		elif candidate == player:
+			to_flip += candidates
+			break
+		index += 7
 
 	flip(to_flip)
 
 def flip(indices):
 	for index in indices:
-		tiles[index] = 1 if tiles[index] == 2 else 1
+		tiles[index] = 1 if tiles[index] == 2 else 2
 
 def check_game_status():
 	empty_spaces = len([tile for tile in tiles if tile == 0])
@@ -126,56 +174,195 @@ def check_game_status():
 def acquire_move(turn):
 	valid_input = False
 
-	# TODO: refactor to make look less like spaghetti
 	while not valid_input:
+		# determine whose turn it is
 		if turn == 1:
 			player_name = red("Player 1")
 		else:
 			player_name = green("Player 2")
+
+		# prompt user for move
 		attempt = input("{}, where do you want to move? ".format(player_name))
 
+		# exit
 		if attempt == 'exit' or attempt == 'done':
 			sys.exit(0)
 
+		# show board again
+		if attempt == 'show':
+			print_board()
+			continue
+
+		# incorrect length
 		if not len(attempt) == 2:
-			print("Invalid input, invalid format - must be in the form of 'xN', where 'x' is a letter between A and H and 'N' is a number between 1 and 8")
+			print(" Invalid input, must be in the form of 'xN', where 'x' is a letter between A and H and 'N' is a number between 1 and 8")
 			continue
 		else:
-			col = attempt[0].lower()
-			row = attempt[1]
-			cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-			if not col in cols:
-				print("Invalid input, column index must be between A and H")
-				continue
+			row = attempt[0].lower()
+			col = attempt[1]
 
+			# make sure col
+			rows = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+			if not row in rows:
+				print(" Invalid input, row index must be between A and H")
+				continue
 			try:
-				row_index = int(row)
-				if row_index < 1 or row_index > 8:
-					print("Invalid input, row index must be between 1 and 8")
+				col_index = int(col)
+				if col_index < 1 or col_index > 8:
+					print(" Invalid input, row index must be between 1 and 8")
 					continue
 			except Exception as e:
-				print("Invalid input, row index must be a number")
+				print(" Invalid input, col index must be a number")
 				continue
 
 			# now we know input is valid
-			col_index = cols.index(col)
-			index = (col_index*8 + row_index) - 1
+			row_index = rows.index(row)
+			index = (row_index*8 + col_index) - 1
 
 		# now we need to check if the inputted move is valid for this game
 		if not tiles[index] == 0:
-			print("Invalid move, there's already a piece in {}!".format(attempt))
+			print(" Invalid move, there's already a piece in {}{}!".format(attempt[0].upper(), attempt[1]))
 			continue
-		elif not is_valid_move(index):
-			print("Invalid move, Player {} can't move to {}".format(turn, attempt))
+		elif not is_valid_move(index, turn):
+			print(" Invalid move, {} can't move to {}{}".format(player_name, attempt[0].upper(), attempt[1]))
 			continue
 
 		valid_input = True
 
 	return index
 
-def is_valid_move(index):
-	# TODO
-	return True
+def is_valid_move(index, player):
+	# go through each tile on the board, check eight directions and see if there's a valid sandwich
+
+	# west
+	temp = index - 1
+	fillings = 0
+	while temp < 64 and temp > -1:
+		tile_value = tiles[temp]
+		if tile_value == 0:
+			break
+		if not tile_value == player:
+			fillings += 1
+		elif tile_value == player:
+			if not fillings == 0:
+				return True
+			else:
+				break
+		temp -= 1
+
+	# east
+	temp = index + 1
+	fillings = 0
+	while temp < 64 and temp > -1:
+		tile_value = tiles[temp]
+		if tile_value == 0:
+			break
+		if not tile_value == player:
+			fillings += 1
+		elif tile_value == player:
+			if not fillings == 0:
+				return True
+			else:
+				break
+		temp += 1
+
+	# north
+	temp = index - 8
+	fillings = 0
+	while temp < 64 and temp > -1:
+		tile_value = tiles[temp]
+		if tile_value == 0:
+			break
+		if not tile_value == player:
+			fillings += 1
+		elif tile_value == player:
+			if not fillings == 0:
+				return True
+			else:
+				break
+		temp -= 8
+
+	# south
+	temp = index + 8
+	fillings = 0
+	while temp < 64 and temp > -1:
+		tile_value = tiles[temp]
+		if tile_value == 0:
+			break
+		if not tile_value == player:
+			fillings += 1
+		elif tile_value == player:
+			if not fillings == 0:
+				return True
+			else:
+				break
+		temp += 8
+
+	# northwest
+	temp = index - 9
+	fillings = 0
+	while temp < 64 and temp > -1:
+		tile_value = tiles[temp]
+		if tile_value == 0:
+			break
+		if not tile_value == player:
+			fillings += 1
+		elif tile_value == player:
+			if not fillings == 0:
+				return True
+			else:
+				break
+		temp -= 9
+
+	# northeast
+	temp = index - 7
+	fillings = 0
+	while temp < 64 and temp > -1:
+		tile_value = tiles[temp]
+		if tile_value == 0:
+			break
+		if not tile_value == player:
+			fillings += 1
+		elif tile_value == player:
+			if not fillings == 0:
+				return True
+			else:
+				break
+		temp -= 7
+
+	# southeast
+	temp = index + 9
+	fillings = 0
+	while temp < 64 and temp > -1:
+		tile_value = tiles[temp]
+		if tile_value == 0:
+			break
+		if not tile_value == player:
+			fillings += 1
+		elif tile_value == player:
+			if not fillings == 0:
+				return True
+			else:
+				break
+		temp += 9
+
+	# southwest
+	temp = index + 7
+	fillings = 0
+	while temp < 64 and temp > -1:
+		tile_value = tiles[temp]
+		if tile_value == 0:
+			break
+		if not tile_value == player:
+			fillings += 1
+		elif tile_value == player:
+			if not fillings == 0:
+				return True
+			else:
+				break
+		temp += 7
+
+	return False
 
 def build_parser():
 	return
