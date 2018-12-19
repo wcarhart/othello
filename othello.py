@@ -67,6 +67,7 @@ def color(color, text):
 def adversary_game_loop(adversary):
 	player_name = color(player_one_color, player_one_name)
 	print("{} vs. {}".format(color(player_one_color, player_one_name), color(adversary_color, adversary_name)))
+	get_taunts(adversary, 'start')
 
 	turn = 1
 	game_over = False
@@ -101,15 +102,28 @@ def adversary_game_loop(adversary):
 		print_board()
 		print("")
 		player_one_score = len([tile for tile in tiles if tile == 1])
-		player_two_score = len([tile for tile in tiles if tile == 2])
-		if player_one_score > player_two_score:
+		adversary_score = len([tile for tile in tiles if tile == 2])
+		if player_one_score > adversary_score:
 			print("{} wins!".format(color(player_one_color, player_one_name)))
-		elif player_two_score > player_one_score:
-			print("{} wins!".format(color(player_two_color, player_two_name)))
+			get_taunts(adversary, 'lose')
+		elif adversary_score > player_one_score:
+			print("{} wins!".format(color(adversary_color, adversary_name)))
+			get_taunts(adversary, 'win')
 		else:
 			print("It's a tie!")
 		print("  {}'s score: {}".format(color(player_one_color, player_one_name), player_one_score))
-		print("  {}'s score: {}".format(color(player_two_color, player_two_name), player_two_score))
+		print("  {}'s score: {}".format(color(adversary_color, adversary_name), adversary_score))
+
+def get_taunts(adversary, state):
+	# TODO
+	if state == 'start':
+		return
+	elif state == 'win':
+		return
+	elif state == 'lose':
+		return
+	else:
+		return
 
 def game_loop():
 	print("{} vs. {}".format(color(player_one_color, player_one_name), color(player_two_color, player_two_name)))
@@ -173,6 +187,15 @@ def update_game(move, turn):
 	# update tiles already on board
 	propogate_flips(move, turn)
 
+def get_index_from_coordinate(coordinate):
+	row = coordinate[0].lower()
+	col = coordinate[1]
+	rows = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+	col_index = int(col)
+	row_index = rows.index(row)
+	index = (row_index*8 + col_index) - 1
+	return index
+
 def get_coordinate_from_index(index):
 	coordinate = ''
 	tens = index // 8
@@ -198,17 +221,22 @@ def get_coordinate_from_index(index):
 
 	return coordinate
 
-def propogate_flips(move, player):
+def propogate_flips(move, player, adversary=False, b=[]):
 	# go in all eight directions and look for another piece of the same color as `turn`
 	# if we find one, flip all in between, if we don't, move on
 
 	to_flip = []
 
+	if adversary:
+		board = b
+	else:
+		board = tiles
+
 	# west
 	index = move - 1
 	candidates = []
 	while index < 64 and index > -1:
-		candidate = tiles[index]
+		candidate = board[index]
 		if candidate == 0:
 			break
 		if not candidate == player:
@@ -222,7 +250,7 @@ def propogate_flips(move, player):
 	index = move + 1
 	candidates = []
 	while index < 64 and index > -1:
-		candidate = tiles[index]
+		candidate = board[index]
 		if candidate == 0:
 			break
 		if not candidate == player:
@@ -236,7 +264,7 @@ def propogate_flips(move, player):
 	index = move - 8
 	candidates = []
 	while index < 64 and index > -1:
-		candidate = tiles[index]
+		candidate = board[index]
 		if candidate == 0:
 			break
 		if not candidate == player:
@@ -250,7 +278,7 @@ def propogate_flips(move, player):
 	index = move + 8
 	candidates = []
 	while index < 64 and index > -1:
-		candidate = tiles[index]
+		candidate = board[index]
 		if candidate == 0:
 			break
 		if not candidate == player:
@@ -264,7 +292,7 @@ def propogate_flips(move, player):
 	index = move - 9
 	candidates = []
 	while index < 64 and index > -1:
-		candidate = tiles[index]
+		candidate = board[index]
 		if candidate == 0:
 			break
 		if not candidate == player:
@@ -278,7 +306,7 @@ def propogate_flips(move, player):
 	index = move - 7
 	candidates = []
 	while index < 64 and index > -1:
-		candidate = tiles[index]
+		candidate = board[index]
 		if candidate == 0:
 			break
 		if not candidate == player:
@@ -292,7 +320,7 @@ def propogate_flips(move, player):
 	index = move + 9
 	candidates = []
 	while index < 64 and index > -1:
-		candidate = tiles[index]
+		candidate = board[index]
 		if candidate == 0:
 			break
 		if not candidate == player:
@@ -306,7 +334,7 @@ def propogate_flips(move, player):
 	index = move + 7
 	candidates = []
 	while index < 64 and index > -1:
-		candidate = tiles[index]
+		candidate = board[index]
 		if candidate == 0:
 			break
 		if not candidate == player:
@@ -316,11 +344,19 @@ def propogate_flips(move, player):
 			break
 		index += 7
 
-	flip(to_flip)
+	if adversary:
+		return mock_flip(b, to_flip)
+	else:
+		flip(to_flip)
 
 def flip(indices):
 	for index in indices:
 		tiles[index] = 1 if tiles[index] == 2 else 2
+
+def mock_flip(board, indices):
+	for index in indices:
+		board[index] = 1 if board[index] == 2 else 2
+	return board
 
 def check_game_status():
 	empty_spaces = len([tile for tile in tiles if tile == 0])
@@ -352,7 +388,7 @@ def acquire_move(turn):
 			continue
 
 		# display possible moves
-		if attempt.lower().strip() == 'where' or attempt.lower().strip() == 'where can i go' or attempt.lower().strip() == 'where can i go?':
+		if attempt.lower().strip() == 'where' or attempt.lower().strip().strip('?') == 'where can i go':
 			print_board_with_hints(turn)
 			continue
 
@@ -366,15 +402,26 @@ def acquire_move(turn):
 			print(chr(27) + "[2J")
 			continue
 
+		# show score
+		if attempt.lower().strip() == 'score' or attempt.lower().strip().strip('?') == 'who\'s winning':
+			player_one_score = len([tile for tile in tiles if tile == 1])
+			player_two_score = len([tile for tile in tiles if tile == 2])
+			print("  {}: {}".format(color(player_one_color, player_one_name), player_one_score))
+			if adversary_name == "":
+				print("  {}: {}".format(color(player_two_color, player_two_name), player_two_score))
+			else:
+				print("  {}: {}".format(color(adversary_color, adversary_name), player_two_score))
+			continue
+
 		# incorrect length
 		if not len(attempt) == 2:
-			print(" Invalid input, must be in the form of 'xN', where 'x' (row) is a letter between A and H and 'N' (column) is a number between 1 and 8")
+			print(" Invalid input, must be in the form of 'xN', where 'x' (row) is a letter between A and H and 'N' (column) is a number between 1 and 8, or type `help` for help")
 			continue
 		else:
 			row = attempt[0].lower()
 			col = attempt[1]
 
-			# make sure col
+			# make sure col is a number
 			rows = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 			if not row in rows:
 				print(" Invalid input, row index must be between A and H")
@@ -411,12 +458,13 @@ def show_commands():
 	print(" where  -> shows possible moves for the current player (you can also use 'hint' or 'where can I go?')")
 	print(" help   -> shows this menu and list of commands (you can also use 'command' or 'commands')")
 	print(" clear  -> clears the screen")
+	print(" score  -> show how many tiles each player has (you can also use 'who's winning?')")
 	print(" exit   -> ends the game (you can also use 'done')")
 
-def is_valid_move(index, player, new=False, b=[]):
+def is_valid_move(index, player, adversary=False, b=[]):
 	# go through each tile on the board, check eight directions and see if there's a valid sandwich
 
-	if new:
+	if adversary:
 		board = b
 	else:
 		board = tiles
@@ -593,6 +641,10 @@ def main():
 	tiles[35] = 1
 	tiles[36] = 2
 
+	# TODO: FOR TESTING ONLY
+	# coordinates = {'c3': 1, 'c4': 1, 'c5': 1, 'd3': 2, 'd4': 2, 'd5': 1, 'e4': 2, 'e5': 2, 'e6': 2}
+	# test_configuration(coordinates)
+
 	# intro
 	print("Welcome to Othello!")
 
@@ -601,6 +653,11 @@ def main():
 		game_loop()
 	else:
 		adversary_game_loop(args.adversary)
+
+def test_configuration(coordinates):
+	"""FOR TESTING PURPOSES ONLY"""
+	for coordinate, value in coordinates.items():
+		tiles[get_index_from_coordinate(coordinate)] = int(value)
 
 def compose_adversary(adversary):
 	global adversary_name
