@@ -1,9 +1,14 @@
 import os
 import sys
-import logging
 import argparse
 
 tiles = []
+
+def flashing(text):
+	return "\033[5m{}\033[0m".format(text)
+
+def grey(text):
+	return "\033[90m{}\033[0m".format(text)
 
 def red(text):
 	return "\033[91m{}\033[0m".format(text)
@@ -11,8 +16,20 @@ def red(text):
 def green(text):
 	return "\033[92m{}\033[0m".format(text)
 
-def grey(text):
-	return "\033[90m{}\033[0m".format(text)
+def yellow(text):
+	return "\033[93m{}\033[0m".format(text)
+
+def blue(text):
+	return "\033[94m{}\033[0m".format(text)
+
+def pink(text):
+	return "\033[95m{}\033[0m".format(text)
+
+def teal(text):
+	return "\033[96m{}\033[0m".format(text)
+
+def white(text):
+	return "\033[97m{}\033[0m".format(text)
 
 def game_loop():
 	turn = 1
@@ -193,9 +210,14 @@ def acquire_move(turn):
 			print_board()
 			continue
 
+		# display possible moves
+		if attempt == 'where':
+			print_board_with_hints(turn)
+			continue
+
 		# incorrect length
 		if not len(attempt) == 2:
-			print(" Invalid input, must be in the form of 'xN', where 'x' is a letter between A and H and 'N' is a number between 1 and 8")
+			print(" Invalid input, must be in the form of 'xN', where 'x' (row) is a letter between A and H and 'N' (column) is a number between 1 and 8")
 			continue
 		else:
 			row = attempt[0].lower()
@@ -209,10 +231,10 @@ def acquire_move(turn):
 			try:
 				col_index = int(col)
 				if col_index < 1 or col_index > 8:
-					print(" Invalid input, row index must be between 1 and 8")
+					print(" Invalid input, column index must be between 1 and 8")
 					continue
 			except Exception as e:
-				print(" Invalid input, col index must be a number")
+				print(" Invalid input, column index must be a number")
 				continue
 
 			# now we know input is valid
@@ -365,9 +387,19 @@ def is_valid_move(index, player):
 	return False
 
 def build_parser():
-	return
+	parser = argparse.ArgumentParser(description=__doc__, formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+	parser.add_argument('-c', '--config', action='store_true', default=False, required=False, help="Set up player configuration before starting the game")
+	return parser
 
 def main():
+	# parse command line arguments
+	parser = build_parser()
+	args = parser.parse_args()
+
+	if args.config:
+		# TODO
+		pass
+
 	# define game board
 	global tiles
 	tiles = tiles + [0]*64
@@ -378,6 +410,34 @@ def main():
 
 	# start main game loop
 	game_loop()
+
+def print_board_with_hints(player):
+	# determine possible moves
+	temp_board = [0]*64
+	for index in range(64):
+		if is_valid_move(index, player):
+			temp_board[index] = -1
+		else:
+			temp_board[index] = tiles[index]
+
+	# display board
+	print("\n  1 2 3 4 5 6 7 8")
+	cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+	for i in range(8):
+		print("{} ".format(cols[i]), end='', flush=True)
+		for j in range(8):
+			index = i*8+j
+			if temp_board[index] == 0:
+				text = grey("-")
+			elif temp_board[index] == 1:
+				text = red("*")
+			elif temp_board[index] == 2:
+				text = green("*")
+			else:
+				text = flashing(white("*"))
+			
+			print("{} ".format(text), end='', flush=True)
+		print("")
 
 def print_board():
 	print("\n  1 2 3 4 5 6 7 8")
@@ -393,7 +453,7 @@ def print_board():
 			elif tiles[index] == 2:
 				text = green("*")
 			else:
-				# TODO: log error if here
+				# error
 				pass
 			
 			print("{} ".format(text), end='', flush=True)
