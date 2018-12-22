@@ -76,20 +76,20 @@ def spectate_game_loop():
 
 		if has_any_moves(turn):
 			if turn == 1:
-				move = intelligence.acquire_move_from_intelligence(tiles, player_one_name, player_one_color)
+				move = intelligence.acquire_move_from_intelligence(tiles, player_one_name, player_one_color, player=turn)
 			else:
-				move = intelligence.acquire_move_from_intelligence(tiles, player_two_name, player_two_color)
+				move = intelligence.acquire_move_from_intelligence(tiles, player_two_name, player_two_color, player=turn)
 		else:
 			turn = 1 if turn == 2 else 2
 			if has_any_moves(turn):
 				if turn == 1:
 					player_name = color(player_one_color, player_one_name)
 					print("Sorry {}, you don't have any moves left!".format(player_name))
-					move = intelligence.acquire_move_from_intelligence(tiles, player_two_name, player_two_color)
+					move = intelligence.acquire_move_from_intelligence(tiles, player_two_name, player_two_color, player=turn)
 				else:
 					player_name = color(player_two_color, player_two_name)
 					print("Sorry {}, you don't have any moves left!".format(player_name))
-					move = intelligence.acquire_move_from_intelligence(tiles, player_one_name, player_one_color)
+					move = intelligence.acquire_move_from_intelligence(tiles, player_one_name, player_one_color, player=turn)
 			else:
 				game_over = True
 				break
@@ -768,8 +768,8 @@ def main():
 	tiles[36] = 2
 
 	# TODO: for testing only
-	# coordinates = {'a3': 1, 'b3': 2, 'b4': 2, 'b5': 2, 'c5': 2, 'd4': 2, 'd5': 2, 'd6': 2, 'e3': 2, 'e4': 1, 'e5': 2, 'f2': 2, 'f3': 2, 'f4': 2, 'f5': 2, 'g3': 2}
-	# test_configuration(coordinates)
+	#coordinates = {'e4': 1, 'd5': 1, 'd4': 2, 'e5': 2, 'c5': 2, 'b6': 2}
+	#test_configuration(coordinates)
 
 	# intro
 	print("\nWelcome to Othello!")

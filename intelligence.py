@@ -10,21 +10,21 @@ SWEET_16 = [18, 19, 20, 21, 26, 27, 28, 29, 34, 35, 36, 37, 42, 43, 44, 45]
 NORTH_EDGES = [0, 1, 2, 3, 4, 5, 6, 7]
 SOUTH_EDGES = [56, 57, 58, 59, 60, 61, 62, 63]
 
-def acquire_move_from_intelligence(tiles, adversary, adversary_color):
+def acquire_move_from_intelligence(tiles, adversary, adversary_color, player=2):
 	"""Switch on which AI we're using"""
 
 	if adversary.lower() == 'euclid':
-		return euclid(tiles, adversary_color)
+		return euclid(tiles, adversary_color, player)
 	elif adversary.lower() == 'lovelace':
-		return lovelace(tiles, adversary_color)
+		return lovelace(tiles, adversary_color, player)
 	elif adversary.lower() == 'dijkstra':
-		return dijkstra(tiles, adversary_color)
+		return dijkstra(tiles, adversary_color, player)
 	elif adversary.lower() == 'turing':
-		return turing(tiles, adversary_color)
+		return turing(tiles, adversary_color, player)
 	else:
 		return -1
 
-def euclid(tiles, adversary_color):
+def euclid(tiles, adversary_color, player):
 	"""Simple AI, makes a random move from its potential moves"""
 
 	print("{} is thinking...".format(othello.color(adversary_color, "Euclid")))
@@ -32,15 +32,18 @@ def euclid(tiles, adversary_color):
 
 	potential_moves = []
 	for index in range(64):
-		if othello.is_valid_move(index, 2, adversary=True, b=tiles) and tiles[index] == 0:
+		if othello.is_valid_move(index, player, adversary=True, b=tiles) and tiles[index] == 0:
 			potential_moves.append(index)
+
+	print([othello.get_coordinate_from_index(move) for move in potential_moves])
+	input()
 
 	move = random.choice(potential_moves)
 	print("{} moved to {}!".format(othello.color(adversary_color, "Euclid"), othello.get_coordinate_from_index(move)))
 	time.sleep(2)
 	return move
 
-def lovelace(tiles, adversary_color):
+def lovelace(tiles, adversary_color, player):
 	"""Easy AI, makes a move that maximizes its number of pieces on the board"""
 
 	print("{} is thinking...".format(othello.color(adversary_color, "Ada Lovelace")))
@@ -48,14 +51,14 @@ def lovelace(tiles, adversary_color):
 	
 	potential_moves = []
 	for index in range(64):
-		if othello.is_valid_move(index, 2, adversary=True, b=tiles) and tiles[index] == 0:
+		if othello.is_valid_move(index, player, adversary=True, b=tiles) and tiles[index] == 0:
 			potential_moves.append(index)
 
 	best_move = 0
 	best_total = 0
 	for move in potential_moves:
 		copy = [tile for tile in tiles]
-		board = othello.propogate_flips(move, 2, adversary=True, b=copy)
+		board = othello.propogate_flips(move, player, adversary=True, b=copy)
 		number_of_tiles = len([tile for tile in board if tile == 2])
 		if number_of_tiles > best_total:
 			best_total = number_of_tiles
@@ -65,7 +68,7 @@ def lovelace(tiles, adversary_color):
 	time.sleep(2)
 	return best_move
 
-def dijkstra(tiles, adversary_color):
+def dijkstra(tiles, adversary_color, player):
 	"""Medium AI, makes a move that minimizes the other player's mobility"""
 	# mobility is defined as the other player's possible moves
 
@@ -74,15 +77,16 @@ def dijkstra(tiles, adversary_color):
 
 	potential_moves = []
 	for index in range(64):
-		if othello.is_valid_move(index, 2, adversary=True, b=tiles) and tiles[index] == 0:
+		if othello.is_valid_move(index, player, adversary=True, b=tiles) and tiles[index] == 0:
 			potential_moves.append(index)
 
 	best_move = 0
 	worst_mobility = sys.maxsize
 	for move in potential_moves:
 		copy = [tile for tile in tiles]
-		board = othello.propogate_flips(move, 2, adversary=True, b=copy)
-		mobility = len([index for index in range(64) if othello.is_valid_move(index, 1, adversary=True, b=board) and board[index] == 0])
+		board = othello.propogate_flips(move, player, adversary=True, b=copy)
+		other_player = 2 if player == 1 else 1
+		mobility = len([index for index in range(64) if othello.is_valid_move(index, other_player, adversary=True, b=board) and board[index] == 0])
 		if mobility < worst_mobility:
 			worst_mobility = mobility
 			best_move = move
@@ -91,7 +95,7 @@ def dijkstra(tiles, adversary_color):
 	time.sleep(2)
 	return best_move
 
-def turing(tiles, adversary_color):
+def turing(tiles, adversary_color, player):
 	"""Hard AI, makes a move that minimizes the other player's mobility, maximizes its own mobility, and avoids giving the other user corners"""
 
 	# Priorities:
@@ -112,7 +116,7 @@ def turing(tiles, adversary_color):
 
 	potential_moves = []
 	for index in range(64):
-		if othello.is_valid_move(index, 2, adversary=True, b=tiles) and tiles[index] == 0:
+		if othello.is_valid_move(index, player, adversary=True, b=tiles) and tiles[index] == 0:
 			potential_moves.append(index)
 
 	# STEP 1
@@ -120,9 +124,10 @@ def turing(tiles, adversary_color):
 	bad_corner_moves = []
 	for move in potential_moves:
 		copy = [tile for tile in tiles]
-		board = othello.propogate_flips(move, 2, adversary=True, b=copy)
+		board = othello.propogate_flips(move, player, adversary=True, b=copy)
 
-		if not len([index for index in range(64) if othello.is_valid_move(index, 1, adversary=True, b=board) and board[index] == 0 and index in CORNERS]) == 0:
+		other_player = 2 if player == 1 else 1
+		if not len([index for index in range(64) if othello.is_valid_move(index, other_player, adversary=True, b=board) and board[index] == 0 and index in CORNERS]) == 0:
 			bad_corner_moves.append(move)
 			
 	# determine if can get a corner right now
@@ -140,8 +145,8 @@ def turing(tiles, adversary_color):
 		best_move = good_corner_moves[0]
 		for corner_move in good_corner_moves:
 			copy = [tile for tile in tiles]
-			board = othello.propogate_flips(move, 2, adversary=True, b=copy)
-			number_of_tiles = len([tile for tile in board if tile == 2])
+			board = othello.propogate_flips(move, player, adversary=True, b=copy)
+			number_of_tiles = len([tile for tile in board if tile == player])
 			if number_of_tiles > most_tiles:
 				most_tiles = number_of_tiles
 				best_move = corner_move
@@ -164,15 +169,15 @@ def turing(tiles, adversary_color):
 		# go through all moves and calculate increases in my mobility and decreases in your mobility
 		for move in good_moves:
 			copy = [tile for tile in tiles]
-			board = othello.propogate_flips(move, 2, adversary=True, b=copy)
+			board = othello.propogate_flips(move, player, adversary=True, b=copy)
 
-			temp_my_mobility = calculate_my_mobility(board, 2)
+			temp_my_mobility = calculate_my_mobility(board, player)
 			max_my_mobility = temp_my_mobility if temp_my_mobility > max_my_mobility else max_my_mobility
 
-			temp_your_mobility = calculate_your_mobility(board, 1)
+			temp_your_mobility = calculate_your_mobility(board, other_player)
 			min_your_mobility = temp_your_mobility if temp_your_mobility < min_your_mobility else min_your_mobility
 
-			temp_sweet_score = calculate_sweet_16_score(board, 2)
+			temp_sweet_score = calculate_sweet_16_score(board, player)
 			max_sweet_score = temp_sweet_score if temp_sweet_score > max_sweet_score else max_sweet_score
 
 			temp_mobility_scores[move] = (temp_my_mobility, temp_your_mobility, temp_sweet_score)
