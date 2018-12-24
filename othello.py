@@ -1,8 +1,13 @@
+"""
+Command line implementation of the game Othello (also known as Reversi)
+"""
+
 import sys
 import argparse
 import random
 import intelligence
 
+# constants
 tiles = []
 WEST_EDGES = [0, 8, 16, 24, 32, 40, 48, 56]
 EAST_EDGES = [7, 15, 23, 31, 39, 47, 55]
@@ -14,34 +19,44 @@ player_two_color = "green"
 adversary_name = ""
 adversary_color = ""
 
+# converts text to flashing
 def flashing(text):
 	return "\033[5m{}\033[0m".format(text)
 
+# converts text to grey 
 def grey(text):
 	return "\033[90m{}\033[0m".format(text)
 
+# converts text to red
 def red(text):
 	return "\033[91m{}\033[0m".format(text)
 
+# converts text to green
 def green(text):
 	return "\033[92m{}\033[0m".format(text)
 
+# converts text to yellow
 def yellow(text):
 	return "\033[93m{}\033[0m".format(text)
 
+# converts text to blue
 def blue(text):
 	return "\033[94m{}\033[0m".format(text)
 
+# converts text to pink
 def pink(text):
 	return "\033[95m{}\033[0m".format(text)
 
+# converts text to teal
 def teal(text):
 	return "\033[96m{}\033[0m".format(text)
 
+# converts text to white
 def white(text):
 	return "\033[97m{}\033[0m".format(text)
 
 def color(color, text):
+	"""Changes color of provided texted to a specified color"""
 	if color.lower() == 'grey':
 		return grey(text)
 	elif color.lower() == 'red':
@@ -62,6 +77,9 @@ def color(color, text):
 		return text
 
 def spectate_game_loop():
+	"""Game loop for spectating"""
+
+	# set up players
 	name_one = color(player_one_color, player_one_name)
 	name_two = color(player_two_color, player_two_name)
 	print("{} vs. {}".format(name_one, name_two))
@@ -71,7 +89,7 @@ def spectate_game_loop():
 	turn = 1
 	game_over = False
 	while not game_over:
-		# print board for players to see
+		# print board for user to see
 		print_board()
 
 		if has_any_moves(turn):
@@ -120,6 +138,7 @@ def spectate_game_loop():
 		print("  {}'s score: {}".format(color(player_two_color, player_two_name), player_two_score))
 
 def adversary_game_loop(adversary):
+	"""Game loop for one human player and one computer adversary"""
 	player_name = color(player_one_color, player_one_name)
 	print("{} vs. {}".format(color(player_one_color, player_one_name), color(adversary_color, adversary_name)))
 	print("{} says: {}".format(color(adversary_color, adversary_name), get_taunts(adversary, 'start')))
@@ -127,7 +146,7 @@ def adversary_game_loop(adversary):
 	turn = 1
 	game_over = False
 	while not game_over:
-		# print board for players to see
+		# print board for player to see
 		print_board()
 
 		if turn == 1:
@@ -170,6 +189,7 @@ def adversary_game_loop(adversary):
 		print("  {}'s score: {}".format(color(adversary_color, adversary_name), adversary_score))
 
 def get_taunts(adversary, state):
+	"""Returns a taunt based on the computer adversary and game state"""
 	if state == 'start':
 		if adversary.lower() == 'euclid':
 			return "The Euclidian algorithm isn't the only one I know!"
@@ -199,6 +219,7 @@ def get_taunts(adversary, state):
 			return "Nonsense, I must return to Bletchley at once to continue my research on this wretched game!"
 
 def game_loop():
+	"""Main game loop for a regular game"""
 	print("{} vs. {}".format(color(player_one_color, player_one_name), color(player_two_color, player_two_name)))
 
 	turn = 1
@@ -247,6 +268,7 @@ def game_loop():
 		print("  {}'s score: {}".format(color(player_two_color, player_two_name), player_two_score))
 
 def has_any_moves(player):
+	"""Determines if a specified player has any valid moves"""
 	temp_board = [0]*64
 	for index in range(64):
 		if is_valid_move(index, player) and tiles[index] == 0:
@@ -254,6 +276,8 @@ def has_any_moves(player):
 	return False
 
 def update_game(move, turn):
+	"""Updates the game based on a certain move"""
+
 	# add new tile to board
 	tiles[move] = turn
 
@@ -261,6 +285,7 @@ def update_game(move, turn):
 	propogate_flips(move, turn)
 
 def get_index_from_coordinate(coordinate):
+	"""Converts numeric index to board coordinate"""
 	row = coordinate[0].lower()
 	col = coordinate[1]
 	rows = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
@@ -270,6 +295,7 @@ def get_index_from_coordinate(coordinate):
 	return index
 
 def get_coordinate_from_index(index):
+	"""Converts board coordinate to numeric index"""
 	coordinate = ''
 	tens = index // 8
 	if tens == 0:
@@ -295,6 +321,8 @@ def get_coordinate_from_index(index):
 	return coordinate
 
 def propogate_flips(move, player, adversary=False, b=[]):
+	"""Propogate flips as a result of a move"""
+
 	# go in all eight directions and look for another piece of the same color as `turn`
 	# if we find one, flip all in between, if we don't, move on
 
@@ -423,15 +451,18 @@ def propogate_flips(move, player, adversary=False, b=[]):
 		flip(to_flip)
 
 def flip(indices):
+	"""Flip a specific set of tiles"""
 	for index in indices:
 		tiles[index] = 1 if tiles[index] == 2 else 2
 
 def mock_flip(board, indices):
+	"""Return a copy of the board with specific tiles flipped"""
 	for index in indices:
 		board[index] = 1 if board[index] == 2 else 2
 	return board
 
 def check_game_status():
+	"""CHeck if game has ended or not"""
 	empty_spaces = len([tile for tile in tiles if tile == 0])
 	if empty_spaces == 0:
 		return True
@@ -439,6 +470,7 @@ def check_game_status():
 		return False
 
 def change_color(player):
+	"""Change a player's color"""
 	global player_one_color
 	global player_one_name
 	global player_two_color
@@ -484,6 +516,7 @@ def change_color(player):
 		player_two_color = potential_color
 
 def acquire_move(turn):
+	"""Acquire user input and parse command"""
 	valid_input = False
 
 	while not valid_input:
@@ -575,6 +608,7 @@ def acquire_move(turn):
 	return index
 
 def show_commands():
+	"""Show commands menu during game loop"""
 	print("====Command list====")
 	print(" B6     -> attempts to place new tile on location B6")
 	print(" show   -> redraws the current board")
@@ -586,6 +620,8 @@ def show_commands():
 	print(" exit   -> ends the game (you can also use 'done')")
 
 def is_valid_move(index, player, adversary=False, b=[]):
+	"""Determine if an inputted move is valid for a specific character"""
+
 	# go through each tile on the board, check eight directions and see if there's a valid sandwich
 
 	if adversary:
@@ -732,6 +768,7 @@ def is_valid_move(index, player, adversary=False, b=[]):
 	return False
 
 def build_parser():
+	"""Build CLI parser"""
 	parser = argparse.ArgumentParser(description=__doc__, formatter_class = argparse.ArgumentDefaultsHelpFormatter)
 	parser.add_argument('--setup', action='store_true', default=False, required=False, help="Set up player configuration before starting the game")
 	parser.add_argument('--list-commands', action='store_true', default=False, required=False, help="Show the available commands you can type during the game")
@@ -784,11 +821,14 @@ def main():
 			adversary_game_loop(args.adversary)
 
 def test_configuration(coordinates):
-	"""FOR TESTING PURPOSES ONLY"""
+	"""Build a specific game board"""
+
+	# FOR TESTING PURPOSES ONLY
 	for coordinate, value in coordinates.items():
 		tiles[get_index_from_coordinate(coordinate)] = int(value)
 
 def start_spectate():
+	"""Set up spectate mode"""
 	global player_one_name
 	global player_one_color
 	global player_two_name
@@ -836,6 +876,7 @@ def start_spectate():
 	spectate_game_loop()
 
 def compose_adversary(adversary):
+	"""Set up computer adversary"""
 	global adversary_name
 	global adversary_color
 	global against_adversary
@@ -880,6 +921,8 @@ def compose_adversary(adversary):
 
 
 def print_board_with_hints(player):
+	"""Print board with possible moves flashing"""
+
 	# determine possible moves
 	temp_board = [0]*64
 	for index in range(64):
@@ -924,6 +967,8 @@ def print_board_with_hints(player):
 		print("You can move to {}".format(movelist))
 
 def print_board():
+	"""Print board"""
+
 	print("\n  1 2 3 4 5 6 7 8")
 	cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
 	for i in range(8):
@@ -947,6 +992,7 @@ def print_board():
 		print("")
 
 def configure_players():
+	"""Set up players if --setup option is used"""
 	global player_one_name
 	global player_one_color
 	global player_two_name
